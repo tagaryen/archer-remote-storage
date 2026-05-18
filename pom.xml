@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.archer</groupId>
-  <artifactId>archer-rpc-java</artifactId>
+  <artifactId>archer-rs-client</artifactId>
   <version>1.2.0</version>
   <packaging>jar</packaging>
 
