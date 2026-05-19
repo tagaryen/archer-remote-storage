@@ -79,10 +79,10 @@ public class SM4Util {
         int[] rk = new int[32];
         int[] MK = new int[4];
 
-        MK[0] = NumberUtil.bytesToInt(key, 0);
-        MK[1] = NumberUtil.bytesToInt(key, 4);
-        MK[2] = NumberUtil.bytesToInt(key, 8);
-        MK[3] = NumberUtil.bytesToInt(key, 12);
+        MK[0] = bytesToInt(key, 0);
+        MK[1] = bytesToInt(key, 4);
+        MK[2] = bytesToInt(key, 8);
+        MK[3] = bytesToInt(key, 12);
 
         int i;
         int[] K = new int[4];
@@ -165,10 +165,10 @@ public class SM4Util {
         
         int[] X = new int[4];
         
-        X[0] = NumberUtil.bytesToInt(in, inOff);
-        X[1] = NumberUtil.bytesToInt(in, inOff + 4);
-        X[2] = NumberUtil.bytesToInt(in, inOff + 8);
-        X[3] = NumberUtil.bytesToInt(in, inOff + 12);
+        X[0] = bytesToInt(in, inOff);
+        X[1] = bytesToInt(in, inOff + 4);
+        X[2] = bytesToInt(in, inOff + 8);
+        X[3] = bytesToInt(in, inOff + 12);
         
         for (int i = 0; i < 32; i += 4) {
             X[0] = F0(X, rk[i]);
@@ -177,10 +177,10 @@ public class SM4Util {
             X[3] = F3(X, rk[i + 3]);
         }
 
-        NumberUtil.intToBytes(X[3], out, outOff);
-        NumberUtil.intToBytes(X[2], out, outOff + 4);
-        NumberUtil.intToBytes(X[1], out, outOff + 8);
-        NumberUtil.intToBytes(X[0], out, outOff + 12);
+        intToBytes(X[3], out, outOff);
+        intToBytes(X[2], out, outOff + 4);
+        intToBytes(X[1], out, outOff + 8);
+        intToBytes(X[0], out, outOff + 12);
 
         return BLOCK_SIZE;
     }
@@ -232,4 +232,18 @@ public class SM4Util {
         return Arrays.copyOfRange(out, 0, l);
     }
 
+    static int bytesToInt(byte[] bs, int off) {
+        int n = bs[off] << 24;
+        n |= (bs[++off] & 0xff) << 16;
+        n |= (bs[++off] & 0xff) << 8;
+        n |= (bs[++off] & 0xff);
+        return n;
+    }
+    
+	static void intToBytes(int num, byte[] bytes, int off) {
+		bytes[off++] = (byte) (0xff & (num >> 24));
+		bytes[off++] = (byte) (0xff & (num >> 16));
+		bytes[off++] = (byte) (0xff & (num >> 8));
+		bytes[off] = (byte) (0xff & (num));
+	}
 }
