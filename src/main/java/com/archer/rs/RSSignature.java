@@ -3,19 +3,19 @@ package com.archer.rs;
 public class RSSignature {
 
 	private String signature;
-	private String nonce;
+	private String t;
 	
-	public RSSignature(String signature, String nonce) {
+	public RSSignature(String signature, String t) {
 		this.signature = signature;
-		this.nonce = nonce;
+		this.t = t;
 	}
 	
 	public String getSignature() {
 		return signature;
 	}
 	
-	public String getNonce() {
-		return nonce;
+	public String getT() {
+		return t;
 	}
 	
 }

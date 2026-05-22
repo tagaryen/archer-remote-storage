@@ -2,7 +2,7 @@ package com.archer.rs.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Random;
 
 import com.archer.rs.ArcherException;
@@ -19,10 +19,10 @@ public class SignatureUtil {
 		for(int i = 0; i < 16; i++) {
 			rand[i] = chars[r.nextInt(chars.length)];
 		}
-		String nonce = new String(rand);
-		String sig = new String(SM4Util.encrypt((url + nonce).getBytes(), key.getBytes()), StandardCharsets.UTF_8);
+		String t = String.valueOf(System.currentTimeMillis());
+		String sig = Base64.getEncoder().encodeToString(SM4Util.encrypt((url + t).getBytes(), key.getBytes()));
 		try {
-			return new RSSignature(nonce, URLEncoder.encode(sig, "UTF-8"));
+			return new RSSignature(URLEncoder.encode(sig, "UTF-8"), t);
 		} catch (UnsupportedEncodingException ignore) {
 			throw new ArcherException("Generate signature failed");
 		}
