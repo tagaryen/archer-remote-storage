@@ -1,6 +1,5 @@
 package com.archer.rs;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import com.archer.net.Bytes;
@@ -95,7 +94,6 @@ class ArcherConnector implements Handler  {
 	// 9,6,0,7  
 	private void parseData(Bytes data) {
 		byte[] magic = data.read(4);
-		System.out.println("magic " + Arrays.toString(magic));
 		for(int i = 0; i < 4; i++) {
 			if(MAGIC[i] != magic[i]) {
 				throw new ArcherException("Invalid protocol.");

@@ -20,7 +20,7 @@ public class AppTest
     public static void main( String[] args )
     {
 //    	final ArcherRSClient acli = new ArcherRSClient("123.57.55.232", 9611, "u&*1l)+yv1%*:^tg".getBytes());
-    	final ArcherRSClient acli = new ArcherRSClient("127.0.0.1", 9611, "u&*1l)+yv1%*:^tg".getBytes());
+    	final ArcherRSClient acli = new ArcherRSClient("10.32.122.172", 9611, "u&*1l)+yv1%*:^tg".getBytes());
     	
     	
     	LocalDateTime now = LocalDateTime.now();

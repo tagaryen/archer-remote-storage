@@ -8,6 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
 
+import com.archer.net.http.HttpRequest;
+import com.archer.net.http.HttpResponse;
+import com.archer.net.http.HttpServer;
+import com.archer.net.http.HttpServerException;
+import com.archer.net.http.HttpStreamWriter;
+import com.archer.net.http.HttpWrappedHandler;
 import com.archer.net.http.client.NativeRequest;
 import com.archer.net.http.client.NativeResponse;
 import com.archer.net.http.multipart.FormData;
@@ -19,31 +25,37 @@ public class UploadTest {
 	
 
 	public static void testProxy() {
-		NativeResponse res = NativeRequest.post("http://10.32.122.172:9617/proxy?t=1234567", "nihaow".getBytes(StandardCharsets.UTF_8));
+		String body = "{\"dlBmList\":[\"platformportal01\",\"maintenancecenter\"],\"pzKey\":\"connectLogin\"}";
+		NativeResponse res = NativeRequest.post("http://10.32.122.172:9617/webGateway/apiCommon/v1.0/mhmdl/getDlPzx", body.getBytes(StandardCharsets.UTF_8));
     	System.out.println(res.getContentType());
 		System.out.println(new String(res.getBody()));
 	}
 	
 	public static void test() {
 
-		String body = "{\r\n"
-				+ "    \"name\":\"某某代理配置\",\r\n"
-				+ "    \"requestPath\": \"/proxy\",\r\n"
-				+ "    \"proxyUrl\": \"https://10.32.123.24:9666/api\",\r\n"
-				+ "    \"proxySsl\": {\r\n"
-				+ "        \"verifyPeer\": false,\r\n"
-				+ "        \"caPath\": \"/usr/local/rs/gm_cert/ca.crt\",\r\n"
-				+ "        \"crtPath\": \"/usr/local/rs/gm_cert/cli.crt\",\r\n"
-				+ "        \"keyPath\": \"/usr/local/rs/gm_cert/cli.key\",\r\n"
-				+ "        \"enCrtPath\": \"/usr/local/rs/gm_cert/cli_en.crt\",\r\n"
-				+ "        \"enKeyPath\": \"/usr/local/rs/gm_cert/cli_en.key\"\r\n"
-				+ "    },\r\n"
-				+ "    \"requestHeaders\": {},\r\n"
-				+ "    \"responseHeaders\":{}\r\n"
+		String body = "{"
+				+ "    \"name\":\"根代理\","
+				+ "    \"requestPath\": \"/\","
+				+ "    \"proxyUrl\": \"https://10.32.123.24:8090/\","
+				+ "    \"proxySsl\": {"
+				+ "        \"verifyPeer\": false"
+				+ "    },"
+				+ "    \"requestHeaders\": {},"
+				+ "    \"responseHeaders\":{\"this-is\":\"a proxy\"}"
 				+ "}";
 		RSSignature sig = SignatureUtil.generateSignature("/archer/proxy-api/proxy-add", "tg$1!^cv1%%*(a=+");
-		System.out.println(sig);
 		NativeResponse res = NativeRequest.post("http://10.32.122.172:9617/archer/proxy-api/proxy-add?t="+sig.getT()+"&signature="+sig.getSignature(), body.getBytes(StandardCharsets.UTF_8));
+		System.out.println(new String(res.getBody()));
+	}
+	public static void testDel() {
+		RSSignature sig = SignatureUtil.generateSignature("/archer/proxy-api/proxy-del", "tg$1!^cv1%%*(a=+");
+		String name = null;
+		try {
+			name = URLEncoder.encode("服务代理", "utf-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		NativeResponse res = NativeRequest.post("http://10.32.122.172:9617/archer/proxy-api/proxy-del?name="+name+"&t="+sig.getT()+"&signature="+sig.getSignature(), null);
 		System.out.println(new String(res.getBody()));
 	}
 
@@ -66,9 +78,34 @@ public class UploadTest {
     	System.out.println(new String(res.getBody()));
     	
     }
+    
+	public static void httpServer() {
+		HttpServer server = new HttpServer();
+		try {
+			server.listen("127.0.0.1", 9666, new HttpWrappedHandler() {
+
+				@Override
+				public void handle(HttpRequest req, HttpResponse res) throws Exception {
+					System.out.println(new String(req.getContent()));
+					HttpStreamWriter writer = res.streamWriter();
+					writer.write("nihaowa".getBytes(StandardCharsets.UTF_8));
+					writer.end();
+				}
+
+				@Override
+				public void handleException(HttpRequest req, HttpResponse res, Throwable t) {
+					t.printStackTrace();
+				}});
+		} catch (HttpServerException e) {
+			e.printStackTrace();
+		}
+	}
+	
 
     public static void main( String[] args ) {
 //    	test();
+//    	testDel();
     	testProxy();
+//    	httpServer();
     }
 }
