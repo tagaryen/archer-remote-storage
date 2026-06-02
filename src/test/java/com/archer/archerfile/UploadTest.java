@@ -8,12 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-import com.archer.net.http.HttpRequest;
-import com.archer.net.http.HttpResponse;
-import com.archer.net.http.HttpServer;
-import com.archer.net.http.HttpServerException;
-import com.archer.net.http.HttpStreamWriter;
-import com.archer.net.http.HttpWrappedHandler;
 import com.archer.net.http.client.NativeRequest;
 import com.archer.net.http.client.NativeResponse;
 import com.archer.net.http.multipart.FormData;
@@ -79,29 +73,6 @@ public class UploadTest {
     	
     }
     
-	public static void httpServer() {
-		HttpServer server = new HttpServer();
-		try {
-			server.listen("127.0.0.1", 9666, new HttpWrappedHandler() {
-
-				@Override
-				public void handle(HttpRequest req, HttpResponse res) throws Exception {
-					System.out.println(new String(req.getContent()));
-					HttpStreamWriter writer = res.streamWriter();
-					writer.write("nihaowa".getBytes(StandardCharsets.UTF_8));
-					writer.end();
-				}
-
-				@Override
-				public void handleException(HttpRequest req, HttpResponse res, Throwable t) {
-					t.printStackTrace();
-				}});
-		} catch (HttpServerException e) {
-			e.printStackTrace();
-		}
-	}
-	
-
     public static void main( String[] args ) {
 //    	test();
 //    	testDel();
