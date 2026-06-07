@@ -6,7 +6,6 @@ import com.archer.net.Bytes;
 import com.archer.net.Channel;
 import com.archer.net.ChannelContext;
 import com.archer.net.HandlerList;
-import com.archer.net.handler.BaseFrameHandler;
 import com.archer.net.handler.Handler;
 import com.archer.rs.util.SM4Util;
 
@@ -19,6 +18,7 @@ class ArcherConnector implements Handler  {
 	private Channel channel;
 	private ChannelContext ctx;
 	private volatile boolean connecting = false;
+	private volatile int dataSize = 0;
 	
 	private Random r = new Random();
 	private byte[] authKey;
@@ -35,7 +35,6 @@ class ArcherConnector implements Handler  {
 		
 		this.channel = new Channel();
 		HandlerList handlers = new HandlerList();
-		handlers.add(new BaseFrameHandler());
 		handlers.add(this);
 		this.channel.handlerList(handlers);
 	}
@@ -75,15 +74,26 @@ class ArcherConnector implements Handler  {
 	//    4     +     16     +     32     +     1     +     2     +     keyLen     +     data
 	// 9,6,0,7  
 	@Override
-	public void onRead(ChannelContext ctx, Bytes data) {
-		parseData(data);
+	public void onRead(ChannelContext ctx) {
+		if(dataSize == 0) {
+			dataSize = ctx.readInt32();
+		}
+		if(ctx.readableSize() < dataSize) {
+			return ;
+		}
+		byte[] databs = ctx.read(dataSize);
+		if(databs.length != dataSize) {
+			throw new ArcherException("Can not parse remote data. Expeted length = " + dataSize + ", receive len = " + databs.length);
+		}
+		parseData(new Bytes(databs));
+		dataSize = 0;
 	}
 
 	@Override
 	public void onSslCertificate(ChannelContext ctx, byte[] arg1) {}
 
 	@Override
-	public void onWrite(ChannelContext ctx, Bytes out) {
+	public void onWrite(ChannelContext ctx, byte[] out) {
 		ctx.toLastOnWrite(out);
 	}
 	
@@ -127,7 +137,9 @@ class ArcherConnector implements Handler  {
 			this.channel.connect(host, port);
 			waitForConnected();
 		}
-		Bytes data = new Bytes();
+		int totalLen = 52 + 1 + 2 + key.length + value.length;
+		Bytes data = new Bytes(4 + totalLen);
+		data.writeInt32(totalLen);
 		data.write(MAGIC);
 		byte[] nonce = new byte[16];
 		r.nextBytes(nonce);
@@ -144,7 +156,7 @@ class ArcherConnector implements Handler  {
 		ArcherCallback cb = new ArcherCallback(type, nonce);
 		inc.saveCallback(nonce, cb);
 		
-		onWrite(ctx, data);
+		onWrite(ctx, data.array());
 		cb.lock();
 		return cb.value;
 	}
