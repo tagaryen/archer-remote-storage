@@ -78,6 +78,10 @@ class ArcherConnector implements Handler  {
 		if(dataSize == 0) {
 			dataSize = ctx.readInt32();
 		}
+		if(dataSize < 0) {
+			dataSize = 0;
+			return ;
+		}
 		if(ctx.readableSize() < dataSize) {
 			return ;
 		}
