@@ -4,7 +4,7 @@
 
   <groupId>io.github.tagaryen</groupId>
   <artifactId>archer-rs-client</artifactId>
-  <version>1.2.6</version>
+  <version>1.2.7</version>
   <packaging>jar</packaging>
   <description>
     Java remote storage client. 
@@ -48,7 +48,7 @@
   	<dependency>
 	  <groupId>io.github.tagaryen</groupId>  
 	  <artifactId>archer-net</artifactId>  
-	  <version>1.5.3</version>  
+	  <version>1.5.4</version>  
 	</dependency> 
   <dependency>
 	  <groupId>io.github.tagaryen</groupId>
@@ -124,7 +124,7 @@
         <artifactId>maven-gpg-plugin</artifactId>
         <version>1.5</version>
         <configuration>
-          <executable>D:/GnuPG/bin/gpg.exe</executable>
+          <executable>C:/Users/CESTC/Soft/GnuPG/bin/gpg.exe</executable>
           <keyname>io.github.tagaryen</keyname>
           <source>1.8</source>
           <target>1.8</target>

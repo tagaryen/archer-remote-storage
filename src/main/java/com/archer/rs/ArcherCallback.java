@@ -1,6 +1,6 @@
 package com.archer.rs;
 
-import com.archer.net.Bytes;
+import com.archer.net.ChannelContext;
 
 class ArcherCallback {
 	
@@ -8,9 +8,13 @@ class ArcherCallback {
 	
 	private Object lock = new Object();
 	
+	private int bodySize = 0;
 	private ArcherMessageType clientType;
 	protected byte[] nonce;
 	protected byte[] key;
+	
+	private int valueSize = 0;
+	private int valueOff = 0;
 	protected byte[] value;
 	
 	public ArcherCallback(ArcherMessageType clientType, byte[] nonce) {
@@ -18,14 +22,22 @@ class ArcherCallback {
 		this.nonce = nonce;
 	}
 	
-	protected void parse(Bytes data) {
-		if(clientType == ArcherMessageType.CLIENT_GET_TYPE) {
-			int keyLen = data.readInt16();
-			key = data.read(keyLen);
-			value = data.readAll();
+	protected void parse(ChannelContext ctx) {
+		if(value == null) {
+			if(clientType == ArcherMessageType.CLIENT_GET_TYPE) {
+				int keyLen = ctx.channel().readInt16();
+				key = ctx.read(keyLen);
+				valueSize = bodySize - 2  - keyLen;
+				value = new byte[valueSize];
+			}
 		}
-		unlock();
-		 
+		while(ctx.readableSize() > 0 && valueOff < valueSize) {
+			int reads = ctx.read(value, valueOff, valueSize - valueOff);
+			valueOff += reads;
+		}
+		if(valueOff == valueSize) {
+			unlock();
+		}
 	}
 	
 	protected void lock() {
@@ -47,5 +59,13 @@ class ArcherCallback {
 		synchronized(lock) {
 			lock.notifyAll();
 		}
+	}
+	
+	protected void setBodySize(int size) {
+		this.bodySize = size;
+	}
+	
+	protected int bodySize() {
+		return this.bodySize;
 	}
 }

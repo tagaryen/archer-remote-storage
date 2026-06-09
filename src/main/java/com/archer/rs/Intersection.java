@@ -49,13 +49,13 @@ class Intersection {
 						break;
 					}
 				}
-			}
-			if(cbs[i] != null && match) {
-				synchronized(lock) {
-					ArcherCallback ret = cbs[i];
-					nonces[i] = null;
-					cbs[i] = null;
-					return ret;
+				if( match) {
+					synchronized(lock) {
+						ArcherCallback ret = cbs[i];
+						nonces[i] = null;
+						cbs[i] = null;
+						return ret;
+					}
 				}
 			}
 		}

@@ -17,14 +17,12 @@ class ArcherConnector implements Handler  {
 	private int port;
 	private Channel channel;
 	private ChannelContext ctx;
-	private volatile boolean connecting = false;
-	private volatile int dataSize = 0;
 	
 	private Random r = new Random();
 	private byte[] authKey;
-	
 	private Intersection inc = new Intersection();
-
+	
+	
 	private Object lock = new Object();
 	
 	
@@ -61,7 +59,6 @@ class ArcherConnector implements Handler  {
 	@Override
 	public void onDisconnect(ChannelContext ctx) {
 		this.ctx = null;
-		connecting = false;
 	}
 
 	@Override
@@ -75,22 +72,7 @@ class ArcherConnector implements Handler  {
 	// 9,6,0,7  
 	@Override
 	public void onRead(ChannelContext ctx) {
-		if(dataSize == 0) {
-			dataSize = ctx.readInt32();
-		}
-		if(dataSize < 0) {
-			dataSize = 0;
-			return ;
-		}
-		if(ctx.readableSize() < dataSize) {
-			return ;
-		}
-		byte[] databs = ctx.read(dataSize);
-		if(databs.length != dataSize) {
-			throw new ArcherException("Can not parse remote data. Expeted length = " + dataSize + ", receive len = " + databs.length);
-		}
-		parseData(new Bytes(databs));
-		dataSize = 0;
+		parseData(ctx);
 	}
 
 	@Override
@@ -106,21 +88,28 @@ class ArcherConnector implements Handler  {
 	//  magic        nonce        sig        msgType     keyLen          key             data
 	//    4     +     16     +     32     +     1     +     2     +     keyLen     +     data
 	// 9,6,0,7  
-	private void parseData(Bytes data) {
-		byte[] magic = data.read(4);
+	private void parseData(ChannelContext ctx) {
+		if(ctx.readableSize() < 57) {
+			return ;
+		}
+		int dataSize = ctx.readInt32();
+		byte[] magic = ctx.read(4);
 		for(int i = 0; i < 4; i++) {
 			if(MAGIC[i] != magic[i]) {
 				throw new ArcherException("Invalid protocol.");
 			}
 		}
-		byte[] nonce = data.read(16);
-		data.read(32); //signature
-
-		ArcherMessageType type = ArcherMessageType.from(data.readInt8());
+		byte[] nonce = ctx.read(16);
+		ctx.read(32); //signature
 		ArcherCallback cb = inc.findCallback(nonce);
+		if(cb == null) {
+			throw new ArcherException("Invalid nonce.");
+		}
+		ArcherMessageType type = ArcherMessageType.from((int)ctx.channel().readInt8());
+		cb.setBodySize(dataSize - 53);
 		try {
 			if(type == ArcherMessageType.SERVER_OK_TYPE) {
-				cb.parse(data);
+				cb.parse(ctx);
 			} else if(type == ArcherMessageType.SERVER_FAIL_TYPE) {
 				throw new ArcherException("Server failed.");
 			} else {
@@ -136,12 +125,14 @@ class ArcherConnector implements Handler  {
 	//    4     +     16     +     32     +     1     +     2     +     keyLen     +     data
 	// 9,6,0,7  
 	private byte[] sendData(ArcherMessageType type, byte[] key, byte[] value) {
-		if(!connecting && !this.channel.isActive()) {
-			connecting = true;
+		if(!this.channel.isActive()) {
 			this.channel.connect(host, port);
 			waitForConnected();
 		}
-		int totalLen = 52 + 1 + 2 + key.length + value.length;
+		int totalLen = 52 + 1 + 2 + key.length;
+		if(type == ArcherMessageType.CLIENT_SAVE_TYPE && value != null) {
+			totalLen += value.length;
+		}
 		Bytes data = new Bytes(4 + totalLen);
 		data.writeInt32(totalLen);
 		data.write(MAGIC);
@@ -159,7 +150,6 @@ class ArcherConnector implements Handler  {
 		}
 		ArcherCallback cb = new ArcherCallback(type, nonce);
 		inc.saveCallback(nonce, cb);
-		
 		onWrite(ctx, data.array());
 		cb.lock();
 		return cb.value;
