@@ -15,6 +15,7 @@ class ArcherCallback {
 	
 	private int valueSize = 0;
 	private int valueOff = 0;
+	protected RuntimeException ex;
 	protected byte[] value;
 	
 	public ArcherCallback(ArcherMessageType clientType, byte[] nonce) {
@@ -67,5 +68,12 @@ class ArcherCallback {
 	
 	protected int bodySize() {
 		return this.bodySize;
+	}
+	protected void setException(RuntimeException ex) {
+		this.ex = ex;
+	}
+	
+	protected RuntimeException exception() {
+		return this.ex;
 	}
 }

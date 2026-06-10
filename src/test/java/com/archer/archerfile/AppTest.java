@@ -33,11 +33,12 @@ public class AppTest
 //    	System.out.println("get "+xycpy.getData().getD().toString());
 //    	System.out.println("get2 "+xycpy2.getData().getD().toString());
 
+    	// 1469
     	final ArcherRSClient acli = new ArcherRSClient("10.32.122.172", 9611, "u&*1l)+yv1%*:^tg".getBytes());
     	final Base<Xyer> xy = new Base<>(new Xyer(1996, 11.17D, "xuyi", LocalDateTime.now()), "xuyi shi da shuai ge"); 
 		ExecutorService pool = Executors.newFixedThreadPool(2);
         List<CompletableFuture<Void>> cfList = new ArrayList<>();
-    	int total = 10;
+    	int total = 100;
     	long t0 = System.currentTimeMillis();
 		for(int i = 0; i < total; i++) {
 			CompletableFuture<Void> cf = CompletableFuture.supplyAsync(new Supplier<Void> () {

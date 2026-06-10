@@ -89,34 +89,36 @@ class ArcherConnector implements Handler  {
 	//    4     +     16     +     32     +     1     +     2     +     keyLen     +     data
 	// 9,6,0,7  
 	private void parseData(ChannelContext ctx) {
-		if(ctx.readableSize() < 57) {
-			return ;
-		}
-		int dataSize = ctx.readInt32();
-		byte[] magic = ctx.read(4);
-		for(int i = 0; i < 4; i++) {
-			if(MAGIC[i] != magic[i]) {
-				throw new ArcherException("Invalid protocol.");
+		while(true) {
+			if(ctx.readableSize() < 57) {
+				return ;
 			}
-		}
-		byte[] nonce = ctx.read(16);
-		ctx.read(32); //signature
-		ArcherCallback cb = inc.findCallback(nonce);
-		if(cb == null) {
-			throw new ArcherException("Invalid nonce.");
-		}
-		ArcherMessageType type = ArcherMessageType.from((int)ctx.channel().readInt8());
-		cb.setBodySize(dataSize - 53);
-		try {
-			if(type == ArcherMessageType.SERVER_OK_TYPE) {
-				cb.parse(ctx);
-			} else if(type == ArcherMessageType.SERVER_FAIL_TYPE) {
-				throw new ArcherException("Server failed.");
-			} else {
-				throw new ArcherException("Invalid type.");
+			int dataSize = ctx.readInt32();
+			byte[] magic = ctx.read(4);
+			for(int i = 0; i < 4; i++) {
+				if(MAGIC[i] != magic[i]) {
+					throw new ArcherException("Invalid protocol.");
+				}
 			}
-		} finally {
-			cb.unlock();
+			byte[] nonce = ctx.read(16);
+			ctx.read(32); //signature
+			ArcherCallback cb = inc.findCallback(nonce);
+			if(cb == null) {
+				throw new ArcherException("Invalid nonce.");
+			}
+			ArcherMessageType type = ArcherMessageType.from((int)ctx.channel().readInt8());
+			cb.setBodySize(dataSize - 53);
+			try {
+				if(type == ArcherMessageType.SERVER_OK_TYPE) {
+					cb.parse(ctx);
+				} else if(type == ArcherMessageType.SERVER_FAIL_TYPE) {
+					cb.setException(new ArcherException("Server response failed"));
+				} else {
+					cb.setException(new ArcherException("Invalid response message type"));
+				}
+			} finally {
+				cb.unlock();
+			}
 		}
 	}
 	
@@ -152,6 +154,9 @@ class ArcherConnector implements Handler  {
 		inc.saveCallback(nonce, cb);
 		onWrite(ctx, data.array());
 		cb.lock();
+		if(cb.ex != null) {
+			throw cb.ex;
+		}
 		return cb.value;
 	}
 	
